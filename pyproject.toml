@@ -1,0 +1,81 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aidex"
+version = "0.1.0"
+description = "Offline AI developer tooling: token counting, cost estimation, context planning, chunking, validation, PII redaction, and diffing."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "Rohith Menon", email = "menonrohith995@gmail.com" }]
+keywords = ["ai", "tokens", "llm", "cli", "developer-tools", "tiktoken"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "tiktoken>=0.7",
+    "pydantic>=2.0",
+    "typer>=0.12",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.0"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "black>=24.0",
+]
+
+[project.scripts]
+aidex = "aidex.cli.main:app"
+
+[project.urls]
+Homepage = "https://github.com/rohithmenon/aidex"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aidex"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# B008: typer declares CLI defaults via typer.Option()/typer.Argument() calls
+"src/aidex/cli/*" = ["B008"]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src/aidex"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["aidex"]
+
+[tool.coverage.report]
+show_missing = true

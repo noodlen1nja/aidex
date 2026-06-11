@@ -1,0 +1,174 @@
+{
+  "default_comparison_set": [
+    "gpt-4o",
+    "gpt-4o-mini",
+    "claude-sonnet-4-5",
+    "claude-haiku-4-5",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash"
+  ],
+  "models": [
+    {
+      "id": "gpt-4o",
+      "aliases": ["4o"],
+      "context_window": 128000,
+      "input_price_per_1m": 2.5,
+      "output_price_per_1m": 10.0,
+      "counting_method": "tiktoken",
+      "confidence": "exact"
+    },
+    {
+      "id": "gpt-4o-mini",
+      "aliases": ["4o-mini"],
+      "context_window": 128000,
+      "input_price_per_1m": 0.15,
+      "output_price_per_1m": 0.6,
+      "counting_method": "tiktoken",
+      "confidence": "exact"
+    },
+    {
+      "id": "gpt-4.1",
+      "aliases": [],
+      "context_window": 1047576,
+      "input_price_per_1m": 2.0,
+      "output_price_per_1m": 8.0,
+      "counting_method": "tiktoken",
+      "confidence": "exact"
+    },
+    {
+      "id": "gpt-4.1-mini",
+      "aliases": [],
+      "context_window": 1047576,
+      "input_price_per_1m": 0.4,
+      "output_price_per_1m": 1.6,
+      "counting_method": "tiktoken",
+      "confidence": "exact"
+    },
+    {
+      "id": "gpt-4.1-nano",
+      "aliases": [],
+      "context_window": 1047576,
+      "input_price_per_1m": 0.1,
+      "output_price_per_1m": 0.4,
+      "counting_method": "tiktoken",
+      "confidence": "exact"
+    },
+    {
+      "id": "o3",
+      "aliases": [],
+      "context_window": 200000,
+      "input_price_per_1m": 2.0,
+      "output_price_per_1m": 8.0,
+      "counting_method": "tiktoken",
+      "confidence": "exact"
+    },
+    {
+      "id": "o4-mini",
+      "aliases": [],
+      "context_window": 200000,
+      "input_price_per_1m": 1.1,
+      "output_price_per_1m": 4.4,
+      "counting_method": "tiktoken",
+      "confidence": "exact"
+    },
+    {
+      "id": "claude-opus-4-1",
+      "aliases": ["claude-opus-4", "claude-opus"],
+      "context_window": 200000,
+      "input_price_per_1m": 15.0,
+      "output_price_per_1m": 75.0,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "aliases": ["claude-sonnet-4", "claude-sonnet"],
+      "context_window": 200000,
+      "input_price_per_1m": 3.0,
+      "output_price_per_1m": 15.0,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    },
+    {
+      "id": "claude-haiku-4-5",
+      "aliases": ["claude-haiku"],
+      "context_window": 200000,
+      "input_price_per_1m": 1.0,
+      "output_price_per_1m": 5.0,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    },
+    {
+      "id": "claude-3-5-haiku",
+      "aliases": ["claude-3.5-haiku"],
+      "context_window": 200000,
+      "input_price_per_1m": 0.8,
+      "output_price_per_1m": 4.0,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    },
+    {
+      "id": "gemini-2.5-pro",
+      "aliases": ["gemini-pro", "gemini-2.0-pro"],
+      "context_window": 1048576,
+      "input_price_per_1m": 1.25,
+      "output_price_per_1m": 10.0,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "aliases": ["gemini-flash"],
+      "context_window": 1048576,
+      "input_price_per_1m": 0.3,
+      "output_price_per_1m": 2.5,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    },
+    {
+      "id": "gemini-2.0-flash",
+      "aliases": [],
+      "context_window": 1048576,
+      "input_price_per_1m": 0.1,
+      "output_price_per_1m": 0.4,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    },
+    {
+      "id": "gemini-2.0-flash-lite",
+      "aliases": [],
+      "context_window": 1048576,
+      "input_price_per_1m": 0.075,
+      "output_price_per_1m": 0.3,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    },
+    {
+      "id": "deepseek-v3",
+      "aliases": ["deepseek-chat"],
+      "context_window": 64000,
+      "input_price_per_1m": 0.27,
+      "output_price_per_1m": 1.1,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    },
+    {
+      "id": "llama-3.3-70b",
+      "aliases": ["llama-3.3"],
+      "context_window": 128000,
+      "input_price_per_1m": 0.59,
+      "output_price_per_1m": 0.79,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    },
+    {
+      "id": "mistral-large",
+      "aliases": [],
+      "context_window": 128000,
+      "input_price_per_1m": 2.0,
+      "output_price_per_1m": 6.0,
+      "counting_method": "heuristic",
+      "confidence": "estimate"
+    }
+  ]
+}
