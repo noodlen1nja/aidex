@@ -35,12 +35,12 @@ def test_default_comparison_set_has_six_models() -> None:
     assert isinstance(results, list)
     assert len(results) == 6
     assert {r.model for r in results} == {
-        "gpt-4o",
-        "gpt-4o-mini",
-        "claude-sonnet-4-5",
+        "gpt-5.5",
+        "gpt-5.4-mini",
+        "claude-sonnet-4-6",
         "claude-haiku-4-5",
-        "gemini-2.5-pro",
-        "gemini-2.5-flash",
+        "gemini-3.1-pro",
+        "gemini-3.5-flash",
     }
     for r in results:
         assert r.confidence in ("exact", "estimate")
@@ -52,9 +52,10 @@ def test_unknown_model_raises() -> None:
 
 
 def test_alias_resolution() -> None:
-    assert get_model("claude-sonnet-4").id == "claude-sonnet-4-5"
+    assert get_model("claude-sonnet").id == "claude-sonnet-4-6"
     assert get_model("claude-haiku").id == "claude-haiku-4-5"
-    assert get_model("gemini-2.0-pro").id == "gemini-2.5-pro"
+    assert get_model("gemini-pro").id == "gemini-3.1-pro"
+    assert get_model("deepseek-chat").id == "deepseek-v4-flash"
 
 
 def test_model_lookup_is_case_insensitive() -> None:

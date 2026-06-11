@@ -197,9 +197,9 @@ def test_models_list_and_show() -> None:
     assert len(json.loads(result.stdout)) >= 15
     human = runner.invoke(app, ["models", "list"])
     assert human.exit_code == 0
-    show = runner.invoke(app, ["models", "show", "claude-sonnet-4", "--json"])
+    show = runner.invoke(app, ["models", "show", "claude-sonnet", "--json"])
     assert show.exit_code == 0
-    assert json.loads(show.stdout)["id"] == "claude-sonnet-4-5"
+    assert json.loads(show.stdout)["id"] == "claude-sonnet-4-6"
     show_human = runner.invoke(app, ["models", "show", "gpt-4o"])
     assert show_human.exit_code == 0
     missing = runner.invoke(app, ["models", "show", "bogus"])
@@ -218,3 +218,55 @@ def test_tools_list() -> None:
 def test_mcp_serve_is_stub() -> None:
     result = runner.invoke(app, ["mcp", "serve"])
     assert result.exit_code == 1
+
+
+def test_redact_output_with_markup_like_text() -> None:
+    # regression: rich markup in user text must not crash or be interpreted
+    result = runner.invoke(app, ["redact", "pii", "odd [/bold] bob@example.com"])
+    assert result.exit_code == 0
+    assert result.exception is None
+    assert "[/bold]" in result.output
+    assert "[EMAIL]" in result.output
+
+
+def test_diff_files_with_markup_like_text(tmp_path: Path) -> None:
+    # regression: diffed file content must not be parsed as rich markup
+    file_a = tmp_path / "a.txt"
+    file_b = tmp_path / "b.txt"
+    file_a.write_text("line [/bold] one\n", encoding="utf-8")
+    file_b.write_text("line [red] two\n", encoding="utf-8")
+    result = runner.invoke(app, ["diff", str(file_a), str(file_b)])
+    assert result.exit_code == 0
+    assert result.exception is None
+
+
+def test_chunk_preview_with_markup_like_text(tmp_path: Path) -> None:
+    # regression: chunk previews must not be parsed as rich markup
+    file = tmp_path / "doc.txt"
+    file.write_text("starts with [/bold] markup. " * 50, encoding="utf-8")
+    result = runner.invoke(
+        app,
+        ["chunk", "split", str(file), "--max-tokens", "50", "--overlap", "10"],
+    )
+    assert result.exit_code == 0
+    assert result.exception is None
+
+
+def test_error_message_with_markup_like_model_name() -> None:
+    # regression: user input echoed in error messages must not crash rich
+    result = runner.invoke(app, ["tokens", "count", "hi", "--model", "[/bold]"])
+    assert result.exit_code == 1
+    assert isinstance(result.exception, SystemExit)
+
+
+def test_validate_json_message_with_markup_like_value(tmp_path: Path) -> None:
+    # regression: schema messages quoting file values must not crash rich
+    data = tmp_path / "data.json"
+    data.write_text('{"kind": "[/bold]"}', encoding="utf-8")
+    schema = tmp_path / "schema.json"
+    schema.write_text('{"properties": {"kind": {"enum": ["a"]}}}', encoding="utf-8")
+    result = runner.invoke(
+        app, ["validate", "json", str(data), "--schema", str(schema)]
+    )
+    assert result.exit_code == 1
+    assert isinstance(result.exception, SystemExit)

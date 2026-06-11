@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import typer
+from rich.markup import escape
 
 from aidex.cli.common import JSON_OPTION, console, emit_json, fail
 from aidex.diff import diff_text
@@ -40,16 +41,18 @@ def diff_command(
         console.print("[bold green]Files are identical.[/bold green]")
     else:
         for line in result.unified_diff.splitlines():
+            # escape: diffed content is user data, not Rich markup
+            text = escape(line)
             if line.startswith("+++") or line.startswith("---"):
-                console.print(f"[bold]{line}[/bold]", highlight=False)
+                console.print(f"[bold]{text}[/bold]", highlight=False)
             elif line.startswith("@@"):
-                console.print(f"[cyan]{line}[/cyan]", highlight=False)
+                console.print(f"[cyan]{text}[/cyan]", highlight=False)
             elif line.startswith("+"):
-                console.print(f"[green]{line}[/green]", highlight=False)
+                console.print(f"[green]{text}[/green]", highlight=False)
             elif line.startswith("-"):
-                console.print(f"[red]{line}[/red]", highlight=False)
+                console.print(f"[red]{text}[/red]", highlight=False)
             else:
-                console.print(line, highlight=False)
+                console.print(text, highlight=False)
     console.print(
         f"[dim]+{result.stats.lines_added} -{result.stats.lines_removed} "
         f"({result.stats.chars_a} → {result.stats.chars_b} chars)[/dim]"

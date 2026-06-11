@@ -50,7 +50,8 @@ def pii(
         emit_json(result.model_dump())
         return
 
-    console.print(result.redacted_text)
+    # markup=False: redacted text is user content, not Rich markup
+    console.print(result.redacted_text, markup=False)
     if result.redactions:
         table = Table(title=f"{result.redaction_count} redaction(s)")
         table.add_column("Type", style="cyan")

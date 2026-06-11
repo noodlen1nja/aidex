@@ -49,6 +49,15 @@ def test_check_keys_silent_when_consistent(tmp_path: Path) -> None:
     assert result.warnings == []
 
 
+def test_deeply_nested_line_reported_not_raised(tmp_path: Path) -> None:
+    path = tmp_path / "deep.jsonl"
+    path.write_text('{"a": 1}\n' + "[" * 100_000 + "\n", encoding="utf-8")
+    result = validate_jsonl(path)
+    assert result.valid is False
+    assert result.errors[0].line == 2
+    assert "nested too deeply" in result.errors[0].message
+
+
 def test_missing_file_raises(tmp_path: Path) -> None:
     with pytest.raises(ValidationError):
         validate_jsonl(tmp_path / "missing.jsonl")

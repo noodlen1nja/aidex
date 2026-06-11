@@ -47,6 +47,15 @@ def validate_jsonl(path: str | Path, check_keys: bool = False) -> ValidationResu
                 )
             )
             continue
+        except RecursionError:
+            errors.append(
+                ValidationIssue(
+                    line=lineno,
+                    message="JSON is nested too deeply to parse",
+                    severity="error",
+                )
+            )
+            continue
         record_count += 1
         if check_keys and isinstance(record, dict):
             keys = set(record)

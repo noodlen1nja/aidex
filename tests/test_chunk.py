@@ -74,6 +74,13 @@ def test_invalid_params_raise(max_tokens: int, overlap: int) -> None:
         chunk_text("hello", max_tokens=max_tokens, overlap_tokens=overlap)
 
 
+def test_empty_separator_raises() -> None:
+    with pytest.raises(ChunkError):
+        chunk_text("hello world", separators=[""])
+    with pytest.raises(ChunkError):
+        chunk_text("hello world", separators=["\n", ""])
+
+
 def test_custom_separators() -> None:
     text = "alpha|beta|gamma|delta" * 20
     chunks = chunk_text(text, max_tokens=20, overlap_tokens=0, separators=["|"])

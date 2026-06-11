@@ -29,10 +29,14 @@ def _resolve_input(text_or_path: str | Path) -> tuple[str, str | None]:
     are read from disk; other strings are treated as literal JSON text."""
     path = Path(text_or_path)
     try:
-        if path.is_file():
+        is_file = path.is_file()
+    except (OSError, ValueError):
+        is_file = False  # not a usable path (e.g. too long) -> literal text
+    if is_file:
+        try:
             return path.read_text(encoding="utf-8"), str(text_or_path)
-    except OSError as exc:
-        raise ValidationError(f"Failed to read {text_or_path!r}: {exc}") from exc
+        except OSError as exc:
+            raise ValidationError(f"Failed to read {text_or_path!r}: {exc}") from exc
     if isinstance(text_or_path, Path):
         raise ValidationError(f"File not found: {text_or_path}")
     return text_or_path, None
@@ -108,7 +112,7 @@ def validate_json(
         schema_text, _ = _resolve_input(schema)
         try:
             loaded = _json.loads(schema_text)
-        except _json.JSONDecodeError as exc:
+        except (_json.JSONDecodeError, RecursionError) as exc:
             raise ValidationError(f"Schema is not valid JSON: {exc}") from exc
         if not isinstance(loaded, dict):
             raise ValidationError("Schema must be a JSON object")
@@ -130,12 +134,29 @@ def validate_json(
         return ValidationResult(
             valid=False, file=file_label, errors=errors, stats=stats
         )
+    except RecursionError:
+        errors.append(
+            ValidationIssue(
+                message="JSON is nested too deeply to parse", severity="error"
+            )
+        )
+        return ValidationResult(
+            valid=False, file=file_label, errors=errors, stats=stats
+        )
 
     stats["top_level_type"] = type(instance).__name__
     if schema_dict is not None:
         stats["schema_checked"] = True
-        for message in _check_schema(instance, schema_dict, "$"):
-            errors.append(ValidationIssue(message=message, severity="error"))
+        try:
+            for message in _check_schema(instance, schema_dict, "$"):
+                errors.append(ValidationIssue(message=message, severity="error"))
+        except RecursionError:
+            errors.append(
+                ValidationIssue(
+                    message="JSON is nested too deeply to check against the schema",
+                    severity="error",
+                )
+            )
 
     return ValidationResult(
         valid=not errors, file=file_label, errors=errors, stats=stats

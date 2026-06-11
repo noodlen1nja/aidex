@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import typer
+from rich.markup import escape
 from rich.table import Table
 
 from aidex.cli.common import JSON_OPTION, console, emit_json, fail
@@ -36,7 +37,8 @@ def _report(result: ValidationResult, json_output: bool) -> None:
                     "" if issue.line is None else str(issue.line),
                     "" if issue.column is None else str(issue.column),
                     f"[{color}]{issue.severity}[/{color}]",
-                    issue.message,
+                    # escape: messages can quote values from the validated file
+                    escape(issue.message),
                 )
             console.print(table)
         if result.stats:

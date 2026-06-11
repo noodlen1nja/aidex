@@ -145,6 +145,9 @@ def chunk_text(
         raise ChunkError("overlap_tokens must be >= 0")
     if overlap_tokens >= max_tokens:
         raise ChunkError("overlap_tokens must be smaller than max_tokens")
+    if separators is not None and any(sep == "" for sep in separators):
+        # an empty separator would make the splitter loop forever
+        raise ChunkError("separators must not contain empty strings")
     if not text:
         return []
 

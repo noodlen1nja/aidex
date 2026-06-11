@@ -83,6 +83,18 @@ def test_schema_from_file(tmp_path: Path) -> None:
     assert validate_json("[1]", schema=schema_path).valid is False
 
 
+def test_deeply_nested_json_reported_not_raised() -> None:
+    result = validate_json("[" * 100_000)
+    assert result.valid is False
+    assert "nested too deeply" in result.errors[0].message
+
+
+def test_deeply_nested_json_with_schema_reported_not_raised() -> None:
+    result = validate_json("[" * 100_000, schema={"type": "array"})
+    assert result.valid is False
+    assert "nested too deeply" in result.errors[0].message
+
+
 def test_bad_schema_raises(tmp_path: Path) -> None:
     schema_path = tmp_path / "schema.json"
     schema_path.write_text("not json", encoding="utf-8")

@@ -15,6 +15,7 @@ from typing import Any, NoReturn
 import typer
 from pydantic import BaseModel
 from rich.console import Console
+from rich.markup import escape
 
 console = Console()
 err_console = Console(stderr=True)
@@ -50,7 +51,8 @@ def fail(message: str, json_mode: bool, code: str = "error") -> NoReturn:
     if json_mode:
         print(json.dumps({"error": message, "code": code}), file=sys.stderr)
     else:
-        err_console.print(f"[bold red]Error:[/bold red] {message}")
+        # escape: messages can echo user input, which must not be parsed as markup
+        err_console.print(f"[bold red]Error:[/bold red] {escape(message)}")
     raise typer.Exit(1)
 
 

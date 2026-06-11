@@ -38,5 +38,5 @@ jobs:
 
       - name: CLI smoke test
         run: |
-          uv run aidex --help
-          uv run aidex tokens count "hello"
+          uv run aidex-tools --help
+          uv run aidex-tools tokens count "hello"

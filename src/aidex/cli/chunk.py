@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import typer
+from rich.markup import escape
 from rich.table import Table
 
 from aidex.chunk import chunk_text
@@ -56,6 +57,6 @@ def split(
             str(chunk.index),
             f"{chunk.token_count:,}",
             f"{chunk.start_char}–{chunk.end_char}",
-            preview,
+            escape(preview),  # chunk content is user data, not Rich markup
         )
     console.print(table)

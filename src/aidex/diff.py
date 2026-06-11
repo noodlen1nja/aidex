@@ -48,10 +48,14 @@ def _read_input(value: str | Path, label: str) -> tuple[str, str]:
     existing file are read from disk; other strings are literal text."""
     path = Path(value)
     try:
-        if path.is_file():
+        is_file = path.is_file()
+    except (OSError, ValueError):
+        is_file = False  # not a usable path (e.g. too long) -> literal text
+    if is_file:
+        try:
             return path.read_text(encoding="utf-8"), str(value)
-    except OSError as exc:
-        raise DiffError(f"Failed to read {value!r}: {exc}") from exc
+        except OSError as exc:
+            raise DiffError(f"Failed to read {value!r}: {exc}") from exc
     if isinstance(value, Path):
         raise DiffError(f"File not found: {value}")
     return value, label

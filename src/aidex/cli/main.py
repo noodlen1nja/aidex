@@ -19,7 +19,7 @@ from aidex.cli.common import err_console
 from aidex.cli.diff import diff_command
 
 app = typer.Typer(
-    name="aidex",
+    name="aidex-tools",
     help="Aidex — offline AI developer tooling.",
     no_args_is_help=True,
 )
@@ -52,7 +52,7 @@ app.add_typer(mcp_app, name="mcp")
 
 def _version_callback(value: bool) -> None:
     if value:
-        print(f"aidex {__version__}")
+        print(f"aidex-tools {__version__}")
         raise typer.Exit()
 
 

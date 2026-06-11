@@ -6,6 +6,10 @@ Python library, a CLI, and an agent tool surface.
 
 No API keys. No network calls in core tool functions.
 
+> **Naming note:** this package is published on PyPI as **`aidex-tools`** (the
+> CLI command is `aidex-tools`, the import path is `aidex`). It is not related
+> to the `aidex` package on PyPI (a TUI project).
+
 > **Note on tiktoken:** OpenAI token counting uses
 > [tiktoken](https://github.com/openai/tiktoken), which downloads its encoding
 > files once on first use and caches them locally. After that first run,
@@ -14,14 +18,16 @@ No API keys. No network calls in core tool functions.
 ## Install
 
 ```bash
-pip install aidex
+pip install aidex-tools
 # or
-uv add aidex
+uv add aidex-tools
 ```
 
 Requires Python >= 3.11.
 
 ## Quickstart (library)
+
+The import path is `aidex`:
 
 ```python
 from aidex.tokens import count_tokens
@@ -43,16 +49,18 @@ for r in count_tokens("hello world"):
     print(r.model, r.token_count, r.confidence)
 
 # Estimate cost
-cost = estimate_cost("some prompt", model="claude-sonnet-4-5", output_tokens=500)
+cost = estimate_cost("some prompt", model="claude-sonnet-4-6", output_tokens=500)
 print(f"${cost.total_cost_usd:.6f} ({cost.confidence})")
 
 # Will it fit?
-plan = plan_context(open("big_doc.txt").read(), model="gpt-4o")
+plan = plan_context(open("examples/big_doc.txt").read(), model="gpt-4o")
 if not plan.fits and plan.suggestion:
     print(f"Chunk into ~{plan.suggestion.estimated_chunks} pieces")
 
 # Chunk it
-chunks = chunk_text(open("big_doc.txt").read(), max_tokens=512, overlap_tokens=50)
+chunks = chunk_text(
+    open("examples/big_doc.txt").read(), max_tokens=512, overlap_tokens=50
+)
 
 # Redact PII (one-way; audit trail never contains original values)
 redacted = redact_pii("Contact bob@example.com or 555-867-5309")
@@ -70,7 +78,7 @@ presents an estimate as exact:
 
 | Provider | Counting method | Confidence |
 | --- | --- | --- |
-| OpenAI (gpt-4o, gpt-4.1, o3, …) | tiktoken | `exact` |
+| OpenAI (gpt-5.5, gpt-5.4, gpt-4o, …) | tiktoken | `exact` |
 | Anthropic, Google, others | character heuristic (chars ÷ 4) | `estimate` |
 
 Every result — token counts, costs, context plans, chunks, token deltas —
@@ -84,27 +92,27 @@ Every subcommand supports `--json` for machine-readable output. Exit codes:
 stderr (as `{"error": "...", "code": "..."}` in `--json` mode).
 
 ```bash
-aidex tokens count "How many tokens is this?"        # compare 6 models
-aidex tokens count prompt.txt --model gpt-4o --json
+aidex-tools tokens count "How many tokens is this?"        # compare 6 models
+aidex-tools tokens count examples/prompt.txt --model gpt-4o --json
 
-aidex cost estimate prompt.txt --model claude-sonnet-4-5 --output-tokens 1000
+aidex-tools cost estimate examples/prompt.txt --model claude-sonnet-4-6 --output-tokens 1000
 
-aidex context plan big_doc.txt --model gpt-4o --reserve-output 4096
+aidex-tools context plan examples/big_doc.txt --model gpt-4o --reserve-output 4096
 
-aidex chunk split big_doc.txt --max-tokens 512 --overlap 50
+aidex-tools chunk split examples/big_doc.txt --max-tokens 512 --overlap 50
 
-aidex validate json config.json --schema schema.json
-aidex validate jsonl dataset.jsonl --check-keys
-aidex validate csv data.csv --no-header
+aidex-tools validate json examples/config.json --schema examples/schema.json
+aidex-tools validate jsonl examples/dataset.jsonl --check-keys
+aidex-tools validate csv examples/data.csv --no-header
 
-aidex redact pii "email bob@example.com, key sk-abc123def456ghi789" \
+aidex-tools redact pii "email bob@example.com, key sk-abc123def456ghi789" \
     --patterns email,api_key
 
-aidex diff old_prompt.txt new_prompt.txt --model gpt-4o
+aidex-tools diff examples/old_prompt.txt examples/new_prompt.txt --model gpt-4o
 
-aidex models list
-aidex models show claude-sonnet-4-5
-aidex tools list
+aidex-tools models list
+aidex-tools models show claude-sonnet-4-6
+aidex-tools tools list
 ```
 
 ## Agent registry
@@ -124,22 +132,27 @@ result = call_tool("count_tokens", {"text": "hello", "model": "gpt-4o"})
 ```
 
 Arguments are validated with Pydantic; results are JSON-serializable dicts.
-An MCP server is planned as an optional extra (`aidex mcp serve` is a stub in
-v0.1).
+An MCP server is planned as an optional extra (`aidex-tools mcp serve` is a
+stub in v0.1).
+
+> **Heads-up for agent integrations:** `diff_text` and `validate_json` accept
+> either literal text or a file path — a string argument naming an existing
+> file is read from disk. If tool arguments come from an untrusted source,
+> treat this as a local file read capability.
 
 ## Tool reference
 
 | Tool | Library function | CLI |
 | --- | --- | --- |
-| Token calculator | `aidex.tokens.count_tokens` | `aidex tokens count` |
-| Cost estimator | `aidex.cost.estimate_cost` | `aidex cost estimate` |
-| Context planner | `aidex.context.plan_context` | `aidex context plan` |
-| Text chunker | `aidex.chunk.chunk_text` | `aidex chunk split` |
-| JSON validator | `aidex.validate.json.validate_json` | `aidex validate json` |
-| JSONL validator | `aidex.validate.jsonl.validate_jsonl` | `aidex validate jsonl` |
-| CSV validator | `aidex.validate.csv_module.validate_csv` | `aidex validate csv` |
-| PII redactor | `aidex.redact.redact_pii` | `aidex redact pii` |
-| Diff checker | `aidex.diff.diff_text` | `aidex diff` |
+| Token calculator | `aidex.tokens.count_tokens` | `aidex-tools tokens count` |
+| Cost estimator | `aidex.cost.estimate_cost` | `aidex-tools cost estimate` |
+| Context planner | `aidex.context.plan_context` | `aidex-tools context plan` |
+| Text chunker | `aidex.chunk.chunk_text` | `aidex-tools chunk split` |
+| JSON validator | `aidex.validate.json.validate_json` | `aidex-tools validate json` |
+| JSONL validator | `aidex.validate.jsonl.validate_jsonl` | `aidex-tools validate jsonl` |
+| CSV validator | `aidex.validate.csv_module.validate_csv` | `aidex-tools validate csv` |
+| PII redactor | `aidex.redact.redact_pii` | `aidex-tools redact pii` |
+| Diff checker | `aidex.diff.diff_text` | `aidex-tools diff` |
 
 Notes:
 
@@ -149,11 +162,14 @@ Notes:
 - **JSON Schema validation** implements a dependency-free subset: `type`,
   `properties`, `required`, `items`, `enum`, `additionalProperties`,
   `minimum`/`maximum`, `minLength`/`maxLength`.
-- **PII redaction** is regex-only in v0.1 (email, phone, SSN, credit card,
-  IPv4, API keys). It is one-way: there is no unredact, and the audit trail
-  records only type, span, and placeholder.
-- **Model pricing** in `aidex models list` is a bundled snapshot for offline
-  estimation; verify against provider pricing pages before billing decisions.
+- **PII redaction** is a best-effort, regex-only scrubber in v0.1 (email,
+  phone, SSN, credit card, IPv4, API keys). It catches known token shapes,
+  not names, addresses, or contextual PII — do not treat it as a compliance
+  control. It is one-way: there is no unredact, and the audit trail records
+  only type, span, and placeholder.
+- **Model pricing** in `aidex-tools models list` is a bundled snapshot for
+  offline estimation; verify against provider pricing pages before billing
+  decisions.
 
 ## Development
 
