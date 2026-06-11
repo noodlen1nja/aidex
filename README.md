@@ -7,8 +7,7 @@ Python library, a CLI, and an agent tool surface.
 No API keys. No network calls in core tool functions.
 
 > **Naming note:** this package is published on PyPI as **`aidex-tools`** (the
-> CLI command is `aidex-tools`, the import path is `aidex`). It is not related
-> to the `aidex` package on PyPI (a TUI project).
+> CLI command is `aidex-tools`, the import path is `aidex`).
 
 > **Note on tiktoken:** OpenAI token counting uses
 > [tiktoken](https://github.com/openai/tiktoken), which downloads its encoding
