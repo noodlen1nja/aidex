@@ -81,7 +81,7 @@ Every public function returns a Pydantic model that serializes cleanly to
 JSON — the same shapes the CLI emits with `--json` and the agent registry
 returns from `call_tool`.
 
-## Confidence labeling (honesty is mandatory)
+## Confidence labeling
 
 Token counts are only exact when the tokenizer is public. Aidex never
 presents an estimate as exact:
