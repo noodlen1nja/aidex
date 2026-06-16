@@ -21,7 +21,7 @@ from collections.abc import Callable
 from pydantic import BaseModel
 
 from aidex.models import AidexError, Confidence, ModelInfo, get_model
-from aidex.tokens import CHARS_PER_TOKEN, _encoding_for
+from aidex.tokens import _encoding_for, chars_per_token
 
 DEFAULT_SEPARATORS: list[str] = ["\n\n", "\n", ". ", " "]
 
@@ -58,12 +58,13 @@ def _split_keep_sep(text: str, sep: str) -> list[tuple[int, str]]:
 
 
 def _hard_split(
-    text: str, start: int, max_tokens: int, count: Callable[[str], int]
+    text: str, start: int, max_tokens: int, count: Callable[[str], int], cpt: float
 ) -> list[tuple[int, str]]:
     pieces: list[tuple[int, str]] = []
     pos = 0
     while pos < len(text):
-        take = min(len(text) - pos, max(1, int(max_tokens * CHARS_PER_TOKEN)))
+        # cpt is a starting char estimate; the inner loop converges via count()
+        take = min(len(text) - pos, max(1, int(max_tokens * cpt)))
         while take > 1 and count(text[pos : pos + take]) > max_tokens:
             take = max(1, int(take * 0.9))
         pieces.append((start + pos, text[pos : pos + take]))
@@ -77,23 +78,24 @@ def _split(
     separators: list[str],
     max_tokens: int,
     count: Callable[[str], int],
+    cpt: float,
 ) -> list[tuple[int, str]]:
     if not text:
         return []
     if count(text) <= max_tokens:
         return [(start, text)]
     if not separators:
-        return _hard_split(text, start, max_tokens, count)
+        return _hard_split(text, start, max_tokens, count, cpt)
     sep, rest = separators[0], separators[1:]
     parts = _split_keep_sep(text, sep)
     if len(parts) <= 1:
-        return _split(text, start, rest, max_tokens, count)
+        return _split(text, start, rest, max_tokens, count, cpt)
     pieces: list[tuple[int, str]] = []
     for offset, piece in parts:
         if count(piece) <= max_tokens:
             pieces.append((start + offset, piece))
         else:
-            pieces.extend(_split(piece, start + offset, rest, max_tokens, count))
+            pieces.extend(_split(piece, start + offset, rest, max_tokens, count, cpt))
     return pieces
 
 
@@ -124,7 +126,7 @@ def _overlap_tail(text: str, overlap_tokens: int, info: ModelInfo) -> str:
         enc = _encoding_for(info.id)
         ids = enc.encode(text)
         return enc.decode(ids[-overlap_tokens:])
-    return text[-int(overlap_tokens * CHARS_PER_TOKEN) :]
+    return text[-int(overlap_tokens * chars_per_token(info)) :]
 
 
 def chunk_text(
@@ -152,15 +154,16 @@ def chunk_text(
         return []
 
     info = get_model(model)
+    cpt = chars_per_token(info)
 
     def count(s: str) -> int:
         if info.counting_method == "tiktoken":
             return len(_encoding_for(info.id).encode(s))
-        return math.ceil(len(s) / CHARS_PER_TOKEN)
+        return math.ceil(len(s) / cpt)
 
     body_budget = max_tokens - overlap_tokens
     seps = DEFAULT_SEPARATORS if separators is None else separators
-    pieces = _split(text, 0, seps, body_budget, count)
+    pieces = _split(text, 0, seps, body_budget, count, cpt)
     merged = _merge(pieces, body_budget, count)
 
     chunks: list[Chunk] = []

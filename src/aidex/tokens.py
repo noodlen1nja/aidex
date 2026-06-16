@@ -29,11 +29,39 @@ from aidex.models import (
 if TYPE_CHECKING:
     from tiktoken import Encoding
 
-#: Characters per token used by the heuristic counting method. Tunable.
+#: Default characters per token for the heuristic counter, used when a model
+#: declares no ``chars_per_token`` and matches no known provider.
 CHARS_PER_TOKEN: float = 4.0
+
+#: Provider-inferred chars-per-token fallbacks, keyed by model-id prefix and
+#: tried in order. These are rough averages for English prose: Claude's
+#: tokenizer runs denser than GPT's (more tokens, fewer chars each), so its
+#: divisor is lower. Counts stay labeled "estimate" regardless.
+_PROVIDER_CHARS_PER_TOKEN: tuple[tuple[str, float], ...] = (
+    ("claude", 3.5),
+    ("gemini", 4.0),
+    ("deepseek", 3.5),
+    ("mistral", 3.8),
+    ("llama", 3.8),
+)
 
 #: Fallback tiktoken encoding for OpenAI models tiktoken does not know by id.
 _FALLBACK_ENCODING = "o200k_base"
+
+
+def chars_per_token(info: ModelInfo) -> float:
+    """Effective characters-per-token divisor for ``info``'s heuristic count.
+
+    Resolution order: the model's explicit ``chars_per_token`` if set, then a
+    provider default inferred from the model id, then :data:`CHARS_PER_TOKEN`.
+    """
+    if info.chars_per_token is not None:
+        return info.chars_per_token
+    needle = info.id.lower()
+    for prefix, value in _PROVIDER_CHARS_PER_TOKEN:
+        if needle.startswith(prefix):
+            return value
+    return CHARS_PER_TOKEN
 
 
 class TokenCountError(AidexError):
@@ -71,7 +99,7 @@ def count_for_model(text: str, info: ModelInfo) -> TokenCountResult:
                 "ensure network access or a populated cache."
             ) from exc
     else:
-        token_count = math.ceil(len(text) / CHARS_PER_TOKEN)
+        token_count = math.ceil(len(text) / chars_per_token(info))
     return TokenCountResult(
         model=info.id,
         token_count=token_count,

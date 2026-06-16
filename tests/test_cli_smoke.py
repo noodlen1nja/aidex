@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -218,6 +219,40 @@ def test_tools_list() -> None:
 def test_mcp_serve_is_stub() -> None:
     result = runner.invoke(app, ["mcp", "serve"])
     assert result.exit_code == 1
+
+
+def test_models_file_override_cli(tmp_path: Path) -> None:
+    from aidex.models import load_catalog
+
+    override = tmp_path / "models.json"
+    override.write_text(
+        json.dumps(
+            {
+                "models": [
+                    {
+                        "id": "gpt-4o",
+                        "aliases": ["4o"],
+                        "context_window": 128000,
+                        "input_price_per_1m": 42.0,
+                        "output_price_per_1m": 84.0,
+                        "counting_method": "tiktoken",
+                        "confidence": "exact",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    try:
+        result = runner.invoke(
+            app,
+            ["--models-file", str(override), "models", "show", "gpt-4o", "--json"],
+        )
+        assert result.exit_code == 0
+        assert json.loads(result.stdout)["input_price_per_1m"] == 42.0
+    finally:
+        os.environ.pop("AIDEX_MODELS_FILE", None)
+        load_catalog.cache_clear()
 
 
 def test_redact_output_with_markup_like_text() -> None:

@@ -1,10 +1,21 @@
 # Aidex
 
-Offline AI developer tooling: token counting, cost estimation, context window
-planning, text chunking, data validation, PII redaction, and diffing — as a
-Python library, a CLI, and an agent tool surface.
+**Offline AI developer tooling that runs with zero network calls and drops
+straight into an agent.** Token counting, cost estimation, context-window
+planning, text chunking, data validation, PII redaction, and diffing — one
+package, exposed three ways: a Python library, a CLI, and an agent tool
+registry with JSON Schemas.
 
-No API keys. No network calls in core tool functions.
+No API keys. No HTTP clients in core. Works in air-gapped CI, locked-down
+enterprise environments, and pre-commit hooks where calling out to a pricing
+or tokenization API isn't an option.
+
+Aidex deliberately makes a different trade than the cost-calculator crowd: it
+never calls the network, so its model pricing is a **bundled snapshot** rather
+than live data. When that snapshot goes stale, you override it locally without
+waiting for a release — see [Custom & updated pricing](#custom--updated-pricing).
+Non-OpenAI token counts are character heuristics labeled `estimate`, never
+presented as exact (see [Confidence labeling](#confidence-labeling-honesty-is-mandatory)).
 
 > **Naming note:** this package is published on PyPI as **`aidex-tools`** (the
 > CLI command is `aidex-tools`, the import path is `aidex`).
@@ -78,11 +89,81 @@ presents an estimate as exact:
 | Provider | Counting method | Confidence |
 | --- | --- | --- |
 | OpenAI (gpt-5.5, gpt-5.4, gpt-4o, …) | tiktoken | `exact` |
-| Anthropic, Google, others | character heuristic (chars ÷ 4) | `estimate` |
+| Anthropic, Google, others | per-provider character heuristic | `estimate` |
 
 Every result — token counts, costs, context plans, chunks, token deltas —
 carries a `confidence` field, and CLI comparison tables show a Confidence
 column.
+
+### Heuristic accuracy
+
+For models without a public tokenizer, Aidex estimates `characters ÷
+chars_per_token`. The divisor is **per provider**, not a flat `4`, because
+tokenizers differ: Claude's runs denser than GPT's (more tokens, fewer
+characters each), so a flat `÷4` understates Claude usage. Defaults are
+rough English-prose averages (Claude ≈ 3.5, Gemini ≈ 4.0); they are still
+estimates and remain labeled `estimate`.
+
+You can tune the divisor per model with a `chars_per_token` field in your
+[external models file](#custom--updated-pricing) — useful if you measure
+your own corpus (code and non-English text tokenize differently from prose).
+
+## Custom & updated pricing
+
+The bundled model catalog is a point-in-time snapshot. Because Aidex never
+calls the network, new model launches and price changes don't reach it until
+the next release — so you can override the catalog locally instead of waiting.
+
+Point `AIDEX_MODELS_FILE` (or the `--models-file` CLI flag) at a JSON file using
+the same shape as the bundle. Entries are **merged over** the bundled catalog:
+
+- a model whose `id` matches a bundled one **replaces** that entry (full entry),
+- new ids are **added** (handy for private models or fine-tunes),
+- an optional `default_comparison_set` overrides the default comparison list.
+
+```json
+{
+  "default_comparison_set": ["gpt-5.5", "my-finetune"],
+  "models": [
+    {
+      "id": "gpt-5.5",
+      "aliases": [],
+      "context_window": 1050000,
+      "input_price_per_1m": 4.0,
+      "output_price_per_1m": 24.0,
+      "counting_method": "tiktoken",
+      "confidence": "exact"
+    },
+    {
+      "id": "my-finetune",
+      "aliases": ["ft"],
+      "context_window": 32000,
+      "input_price_per_1m": 0.5,
+      "output_price_per_1m": 1.5,
+      "counting_method": "heuristic",
+      "confidence": "estimate",
+      "chars_per_token": 3.7
+    }
+  ]
+}
+```
+
+The optional `chars_per_token` tunes the heuristic divisor for that model
+(see [Heuristic accuracy](#heuristic-accuracy)); omit it to use the
+per-provider default inferred from the model id.
+
+```bash
+# via flag (applies to every subcommand)
+aidex-tools --models-file ./my_models.json cost estimate prompt.txt --model gpt-5.5
+
+# or via environment variable
+export AIDEX_MODELS_FILE=./my_models.json
+aidex-tools models list
+```
+
+From the library, set the env var before the catalog is first read. The catalog
+is process-cached; if you change it mid-process, call
+`aidex.models.load_catalog.cache_clear()`.
 
 ## CLI
 
@@ -168,7 +249,8 @@ Notes:
   only type, span, and placeholder.
 - **Model pricing** in `aidex-tools models list` is a bundled snapshot for
   offline estimation; verify against provider pricing pages before billing
-  decisions.
+  decisions, and override it locally via
+  [Custom & updated pricing](#custom--updated-pricing) when it goes stale.
 
 ## Development
 

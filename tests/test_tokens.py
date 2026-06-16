@@ -2,8 +2,13 @@ import math
 
 import pytest
 
-from aidex.models import ModelNotFoundError, get_model, list_models
-from aidex.tokens import CHARS_PER_TOKEN, TokenCountResult, count_tokens
+from aidex.models import ModelInfo, ModelNotFoundError, get_model, list_models
+from aidex.tokens import (
+    CHARS_PER_TOKEN,
+    TokenCountResult,
+    chars_per_token,
+    count_tokens,
+)
 
 
 def test_single_model_exact() -> None:
@@ -15,13 +20,50 @@ def test_single_model_exact() -> None:
     assert result.confidence == "exact"
 
 
-def test_heuristic_count_is_chars_over_four() -> None:
+def test_heuristic_count_uses_effective_divisor() -> None:
     text = "x" * 100
-    result = count_tokens(text, model="claude-sonnet-4-5")
+    info = get_model("claude-sonnet-4-6")
+    result = count_tokens(text, model="claude-sonnet-4-6")
     assert isinstance(result, TokenCountResult)
-    assert result.token_count == math.ceil(100 / CHARS_PER_TOKEN)
+    assert result.token_count == math.ceil(100 / chars_per_token(info))
     assert result.counting_method == "heuristic"
     assert result.confidence == "estimate"
+
+
+def _info(model_id: str, cpt: float | None = None) -> ModelInfo:
+    return ModelInfo(
+        id=model_id,
+        context_window=1000,
+        input_price_per_1m=1.0,
+        output_price_per_1m=1.0,
+        counting_method="heuristic",
+        confidence="estimate",
+        chars_per_token=cpt,
+    )
+
+
+def test_explicit_chars_per_token_wins() -> None:
+    assert chars_per_token(_info("claude-sonnet-4-6", cpt=4.2)) == 4.2
+
+
+def test_provider_inferred_chars_per_token() -> None:
+    # Claude runs denser than GPT, so its inferred divisor is below 4.0
+    assert chars_per_token(_info("claude-sonnet-4-6")) == 3.5
+    assert chars_per_token(_info("gemini-3.1-pro")) == 4.0
+
+
+def test_unknown_provider_falls_back_to_default() -> None:
+    assert chars_per_token(_info("some-private-model")) == CHARS_PER_TOKEN
+
+
+def test_denser_tokenizer_yields_more_tokens() -> None:
+    text = "The quick brown fox jumps over the lazy dog. " * 20
+    claude = count_tokens(text, model="claude-sonnet-4-6")
+    gemini = count_tokens(text, model="gemini-3.1-pro")
+    assert isinstance(claude, TokenCountResult)
+    assert isinstance(gemini, TokenCountResult)
+    # same text, lower divisor for Claude -> strictly more estimated tokens
+    assert claude.token_count > gemini.token_count
 
 
 def test_empty_text_counts_zero_heuristic() -> None:
