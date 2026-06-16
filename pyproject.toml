@@ -4,12 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aidex-tools"
-version = "0.1.0"
+version = "0.1.1"
 description = "Offline AI developer tooling: token counting, cost estimation, context planning, chunking, validation, PII redaction, and diffing."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-authors = [{ name = "Rohith Menon", email = "menonrohith995@gmail.com" }]
+authors = [
+    { name = "noodleninja", email = "107814373+noodlen1nja@users.noreply.github.com" },
+]
 keywords = ["ai", "tokens", "llm", "cli", "developer-tools", "tiktoken"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -44,7 +46,7 @@ dev = [
 aidex-tools = "aidex.cli.main:app"
 
 [project.urls]
-Homepage = "https://github.com/noodlen1nja/aidex"
+Homepage = "https://github.com/noodlen1nja/aidex-tools"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aidex"]
